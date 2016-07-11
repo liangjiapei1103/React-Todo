@@ -1,3 +1,6 @@
+import firebase, {firebaseRef} from 'app/firebase';
+import moment from 'moment';
+
 export var setSearchText = (searchText) => {
     return {
         type: 'SET_SEARCH_TEXT',
@@ -12,10 +15,29 @@ export var toggleShowCompleted = () => {
     };
 };
 
-export var addTodo = (text) => {
+export var addTodo = (todo) => {
     return {
         type: 'ADD_TODO',
-        text
+        todo
+    };
+};
+
+export var startAddTodo = (text) => {
+    return (dispatch, getState) => {
+        var todo = {
+            text,
+            completed: false,
+            createdAt: moment().unix(),
+            completedAt: null
+        };
+        var todoRef = firebaseRef.child('todos').push(todo);
+
+        return todoRef.then(() => {
+            dispatch(addTodo({
+                ...todo,
+                id: todoRef.key
+            }));
+        });
     };
 };
 
@@ -27,9 +49,24 @@ export var addTodos = (todos) => {
 };
 
 // toggleTodo(id) TOGGLE_TODO
-export var toggleTodo = (id) => {
+export var updateTodo = (id, updates) => {
     return {
-        type: 'TOGGLE_TODO',
-        id
+        type: 'UPDATE_TODO',
+        id,
+        updates
+    };
+};
+
+export var startToggleTodo = (id, completed) => {
+
+    return (dispatch, getState) => {
+        var todoRef = firebaseRef.child(`todos/${id}`);
+        var updates = {
+            completed,
+            completedAt: completed ? moment().unix() : null
+        };
+        return todoRef.update(updates).then(() => {
+            dispatch(updateTodo(id, updates));
+        });
     };
 };
